@@ -13,12 +13,16 @@ end
 
 example (a b c : ℝ) : (c * b) * a = b * (a * c) :=
 begin
-  sorry
+  rw mul_comm c b,
+  rw mul_assoc b c a,
+  rw mul_comm c a
 end
 
 example (a b c : ℝ) : a * (b * c) = b * (a * c) :=
 begin
-  sorry
+  rw ←mul_assoc a b c,
+  rw mul_comm a b,
+  rw mul_assoc b a c
 end
 
 /- An example. -/
@@ -34,12 +38,15 @@ end
 
 example (a b c : ℝ) : a * (b * c) = b * (c * a) :=
 begin
-  sorry
+  rw mul_comm,
+  rw mul_assoc
 end
 
 example (a b c : ℝ) : a * (b * c) = b * (a * c) :=
 begin
-  sorry
+  rw ←mul_assoc,
+  rw mul_comm a,
+  rw mul_assoc
 end
 
 /- Using facts from the local context. -/
@@ -58,12 +65,17 @@ end
 example (a b c d e f : ℝ) (h : b * c = e * f) :
   a * b * c * d = a * e * f * d :=
 begin
-  sorry
+  rw mul_assoc a,
+  rw h,
+  rw ←mul_assoc
 end
 
 example (a b c d : ℝ) (hyp : c = b * a - d) (hyp' : d = a * b) : c = 0 :=
 begin
-  sorry
+  rw hyp,
+  rw mul_comm,
+  rw ←hyp',
+  rw sub_self
 end
 
 /- Examples. -/
@@ -135,11 +147,29 @@ section
 variables a b c d : ℝ
 
 example : (a + b) * (c + d) = a * c + a * d + b * c + b * d :=
-sorry
+calc
+  (a + b) * (c + d)
+      = a * (c + d) + b * (c + d)       : by rw add_mul
+  ... = a * c + a * d + b * (c + d)     : by rw mul_add
+  ... = a * c + a * d + (b * c + b * d) : by rw mul_add
+  ... = a * c + a * d + b * c + b * d   : by rw add_assoc (a * c + a * d)
+
+example : (a + b) * (c + d) = a * c + a * d + b * c + b * d :=
+begin
+  rw add_mul,
+  rw mul_add,
+  rw mul_add,
+  rw add_assoc (a * c + a * d)
+end
 
 example (a b : ℝ) : (a + b) * (a - b) = a^2 - b^2 :=
 begin
-  sorry
+  rw [add_mul, mul_sub, mul_sub],
+  rw [←pow_two, ←pow_two],
+  rw [add_sub, sub_add],
+  rw [mul_comm, sub_self],
+  rw sub_sub,
+  rw [add_comm, add_zero]
 end
 
 #check pow_two a

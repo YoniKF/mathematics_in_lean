@@ -99,14 +99,23 @@ example : ∀ a b : point, add a b = add b a :=
 
 protected theorem add_assoc (a b c : point) :
   (a.add b).add c = a.add (b.add c) :=
-sorry
+begin
+  repeat { rw add },
+  ext; dsimp;
+  apply add_assoc
+end
 
 def smul (r : ℝ) (a : point) : point :=
-sorry
+⟨r * a.x, r * a.y, r * a.z⟩
 
 theorem smul_distrib (r : ℝ) (a b : point) :
   (smul r a).add (smul r b) = smul r (a.add b) :=
-sorry
+begin
+  repeat { rw smul },
+  repeat { rw add },
+  ext; dsimp;
+  rw mul_add
+end
 
 end point
 
@@ -145,7 +154,15 @@ def weighted_average (lambda : real)
     (lambda_nonneg : 0 ≤ lambda) (lambda_le : lambda ≤ 1)
     (a b : standard_two_simplex) :
   standard_two_simplex :=
-sorry
+{ x        := lambda * a.x + (1 - lambda) * b.x,
+  y        := lambda * a.y + (1 - lambda) * b.y,
+  z        := lambda * a.z + (1 - lambda) * b.z,
+  x_nonneg := add_nonneg (mul_nonneg lambda_nonneg a.x_nonneg) (mul_nonneg (sub_nonneg.mpr lambda_le) b.x_nonneg),
+  y_nonneg := add_nonneg (mul_nonneg lambda_nonneg a.y_nonneg) (mul_nonneg (sub_nonneg.mpr lambda_le) b.y_nonneg),
+  z_nonneg := add_nonneg (mul_nonneg lambda_nonneg a.z_nonneg) (mul_nonneg (sub_nonneg.mpr lambda_le) b.z_nonneg),
+  sum_eq   := by { set l := lambda, calc
+      l * a.x + (1 - l) * b.x + (l * a.y + (1 - l) * b.y) + (l * a.z + (1 - l) * b.z) = l * (a.x + a.y + a.z) + (b.x + b.y + b.z) - l * (b.x + b.y + b.z) : by ring
+      ...                   = 1 : by simp [a.sum_eq, b.sum_eq] } }
 
 end standard_two_simplex
 
@@ -174,6 +191,15 @@ def midpoint (n : ℕ) (a b : standard_simplex n) : standard_simplex n :=
       field_simp
     end  }
 
+def weighted_average (μ : real)(μ_nonneg : 0 ≤ μ) (μ_le : μ ≤ 1)
+  (n : ℕ) (a b : standard_simplex n) : standard_simplex n :=
+{ v := λ i, μ * a.v i + (1 - μ) * b.v i,
+  nonneg :=
+    λ i, add_nonneg (mul_nonneg μ_nonneg (a.nonneg i)) (mul_nonneg (sub_nonneg.mpr μ_le) (b.nonneg i)),
+  sum_eq_one := by {
+    transitivity μ * ∑ i, a.v i + ∑ i, b.v i - μ * ∑ i, b.v i,
+    { simp [finset.sum_add_distrib, finset.mul_sum, sub_mul, add_sub] },
+    simp [a.sum_eq_one, b.sum_eq_one] } }
 end standard_simplex
 
 structure is_linear (f : ℝ → ℝ) :=

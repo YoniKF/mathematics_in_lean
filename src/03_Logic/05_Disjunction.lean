@@ -27,19 +27,60 @@ end
 namespace my_abs
 
 theorem le_abs_self (x : ℝ) : x ≤ abs x :=
-sorry
+begin
+  cases le_or_gt 0 x,
+  { rw abs_of_nonneg h },
+  rw abs_of_neg h,
+  linarith
+end
 
 theorem neg_le_abs_self (x : ℝ) : -x ≤ abs x :=
-sorry
+begin
+  cases le_or_gt 0 x,
+  { rw abs_of_nonneg h,
+    linarith },
+  rw abs_of_neg h
+end
 
 theorem abs_add (x y : ℝ) : abs (x + y) ≤ abs x + abs y :=
-sorry
+begin
+  cases le_or_gt 0 (x + y),
+  { rw abs_of_nonneg h,
+    exact add_le_add (le_abs_self x) (le_abs_self y) },
+  rw abs_of_neg h,
+  rw neg_add,
+  exact add_le_add (neg_le_abs_self x) (neg_le_abs_self y)
+end
 
 theorem lt_abs : x < abs y ↔ x < y ∨ x < -y :=
-sorry
+begin
+  cases le_or_gt 0 y with,
+  { rw abs_of_nonneg h,
+    split,
+    { exact or.inl },
+    intro h',
+    cases h'; linarith },
+  rw abs_of_neg h,
+  split,
+  { exact or.inr },
+  intro h',
+  cases h'; linarith
+end
 
 theorem abs_lt : abs x < y ↔ - y < x ∧ x < y :=
-sorry
+begin
+  cases le_or_gt 0 x,
+  { rw abs_of_nonneg h,
+    split,
+    { intro h',
+      split; linarith},
+    exact and.right },
+  rw abs_of_neg h,
+  split,
+  { intro h',
+    split; linarith },
+  rintro h', linarith
+end
 
 end my_abs
 end
@@ -63,23 +104,46 @@ end
 
 example {z : ℝ} (h : ∃ x y, z = x^2 + y^2 ∨ z = x^2 + y^2 + 1) :
   z ≥ 0 :=
-sorry
+by { rcases h with ⟨x, y, rfl | rfl⟩; linarith [sq_nonneg x, sq_nonneg y] }
 
 example {x : ℝ} (h : x^2 = 1) : x = 1 ∨ x = -1 :=
-sorry
+begin
+  have h' : (x - 1) * (x + 1) = 0, by linarith,
+  cases eq_zero_or_eq_zero_of_mul_eq_zero h',
+  { left, linarith },
+  right, linarith
+end
 
 example {x y : ℝ} (h : x^2 = y^2) : x = y ∨ x = -y :=
-sorry
+begin
+  have h'  : x^2 - y^2 = 0, by { rw h, apply sub_self },
+  have h'' : (x - y) * (x + y) = 0, by { rw ← h', ring },
+  cases eq_zero_or_eq_zero_of_mul_eq_zero h'' with h''' h''',
+  { left, apply eq_of_sub_eq_zero h'''},
+  right, apply eq_neg_of_add_eq_zero_left h''',
+end
 
 section
 variables {R : Type*} [comm_ring R] [is_domain R]
 variables (x y : R)
 
 example (h : x^2 = 1) : x = 1 ∨ x = -1 :=
-sorry
+begin
+  have h₀ : x^2 - 1 = 0, by { rw h, apply sub_self },
+  have h₁ : (x - 1) * (x + 1) = 0, by { rw ← h₀, ring },
+  cases eq_zero_or_eq_zero_of_mul_eq_zero h₁ with h₂ h₂,
+  { left, apply eq_of_sub_eq_zero h₂},
+  right, apply eq_neg_of_add_eq_zero_left h₂,
+end
 
 example (h : x^2 = y^2) : x = y ∨ x = -y :=
-sorry
+begin
+  have h₀ : x^2 - y^2 = 0, by { rw h, apply sub_self },
+  have h₁ : (x - y) * (x + y) = 0, by { rw ← h₀, ring },
+  cases eq_zero_or_eq_zero_of_mul_eq_zero h₁ with h₂ h₂,
+  { left, apply eq_of_sub_eq_zero h₂},
+  right, apply eq_neg_of_add_eq_zero_left h₂,
+end
 
 end
 
@@ -103,6 +167,15 @@ begin
 end
 
 example (P Q : Prop) : (P → Q) ↔ ¬ P ∨ Q :=
-sorry
+begin
+  split,
+  { intro h,
+    by_cases hp : P,
+    { right, exact h hp },
+    left, exact hp },
+  rintros (hnp | hq ) _,
+  { contradiction },
+  exact hq
+end
 
 end

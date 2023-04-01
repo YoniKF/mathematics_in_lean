@@ -5,6 +5,7 @@ open real
 
 #check (le_refl : ∀ a : ℝ, a ≤ a)
 #check (le_trans : a ≤ b → b ≤ c → a ≤ c)
+#check @le_trans
 
 section
 variables (h : a ≤ b) (h' : b ≤ c)
@@ -55,7 +56,15 @@ le_refl x
 example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d)
     (h₃ : d < e) :
   a < e :=
-sorry
+begin
+  apply lt_of_le_of_lt h₀,
+  apply lt_trans h₁,
+  apply lt_of_le_of_lt h₂,
+  exact h₃
+end
+
+example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e :=
+lt_of_le_of_lt h₀ (lt_trans h₁ (lt_of_le_of_lt h₂ h₃))
 
 example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d)
     (h₃ : d < e) :
@@ -94,6 +103,7 @@ begin
   rw exp_le_exp,
   exact h
 end
+example (h : a ≤ b) : exp a ≤ exp b := exp_le_exp.2 h
 
 example (h₀ : a ≤ b) (h₁ : c < d) : a + exp c + e < b + exp d + e :=
 begin
@@ -105,7 +115,10 @@ end
 
 example (h₀ : d ≤ e) : c + exp (a + d) ≤ c + exp (a + e) :=
 begin
-  sorry
+  apply add_le_add_left,
+  rw exp_le_exp,
+  apply add_le_add_left,
+  exact h₀
 end
 
 example : (0 : ℝ) < 1 :=
@@ -114,11 +127,13 @@ by norm_num
 example (h : a ≤ b) : log (1 + exp a) ≤ log (1 + exp b) :=
 begin
   have h₀ : 0 < 1 + exp a,
-  { sorry },
+  { apply add_pos, norm_num, apply exp_pos },
   have h₁ : 0 < 1 + exp b,
-  { sorry },
+  { apply add_pos, norm_num, apply exp_pos },
   apply (log_le_log h₀ h₁).mpr,
-  sorry
+  apply add_le_add_left,
+  rw exp_le_exp,
+  exact h
 end
 
     example : 0 ≤ a^2 :=
@@ -128,7 +143,11 @@ end
     end
 
 example (h : a ≤ b) : c - exp b ≤ c - exp a :=
-  sorry
+begin
+  apply sub_le_sub_left,
+  rw exp_le_exp,
+  exact h,
+end
 
 example : 2*a*b ≤ a^2 + b^2 :=
 begin
@@ -143,7 +162,7 @@ begin
     ... = a^2 + b^2                   : by ring
 end
 
-example : 2*a*b ≤ a^2 + b^2 :=
+lemma twice_mul_le_sum_squares : 2*a*b ≤ a^2 + b^2 :=
 begin
   have h : 0 ≤ a^2 - 2*a*b + b^2,
   calc
@@ -152,8 +171,22 @@ begin
   linarith
 end
 
+lemma minus_twice_mul_le_sum_squares : -2*a*b ≤ a^2 + b^2 :=
+begin
+  have h : 0 ≤ a^2 + 2*a*b + b^2,
+  calc
+    a^2 + 2*a*b + b^2 = (a + b)^2 : by ring
+    ... ≥ 0                       : by apply pow_two_nonneg,
+  linarith
+end
+
 example : abs (a*b) ≤ (a^2 + b^2) / 2 :=
-sorry
+begin
+  rw abs_le',
+  split,
+  { linarith [twice_mul_le_sum_squares a b] },
+  { linarith [minus_twice_mul_le_sum_squares a b] }
+end
 
 #check abs_le'.mpr
 

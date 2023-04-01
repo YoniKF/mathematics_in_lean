@@ -91,23 +91,33 @@ end int
 
 theorem sq_add_sq_eq_zero {α : Type*} [linear_ordered_ring α] (x y : α) :
   x^2 + y^2 = 0 ↔ x = 0 ∧ y = 0 :=
-  sorry
+begin
+  repeat { rw pow_two },
+  exact mul_self_add_mul_self_eq_zero,
+end
 
 namespace gaussint
 
 def norm (x : gaussint) := x.re^2 + x.im^2
 
 @[simp] theorem norm_nonneg (x : gaussint) : 0 ≤ norm x :=
-sorry
+by { apply add_nonneg; apply sq_nonneg }
 
 theorem norm_eq_zero (x : gaussint) : norm x = 0 ↔ x = 0 :=
-sorry
+by { convert sq_add_sq_eq_zero x.re x.im, simp, apply gaussint.ext_iff }
 
 theorem norm_pos (x : gaussint) : 0 < norm x ↔ x ≠ 0 :=
-sorry
+begin
+  rw [ne, lt_iff_not_ge],
+  apply iff.not,
+  rw ← norm_eq_zero x,
+  split;
+  intro;
+  linarith [norm_nonneg x]
+end
 
 theorem norm_mul (x y : gaussint) : norm (x * y) = norm x * norm y :=
-sorry
+by { simp [norm], ring }
 
 def conj (x : gaussint) : gaussint := ⟨x.re, -x.im⟩
 
@@ -160,7 +170,7 @@ int.nat_abs_of_nonneg (norm_nonneg _)
 lemma nat_abs_norm_mod_lt (x y : gaussint) (hy : y ≠ 0) :
   (x % y).norm.nat_abs < y.norm.nat_abs :=
 begin
-  apply int.coe_nat_lt.1, simp,
+  apply int.coe_nat_lt.mp, simp,
   exact int.nat_abs_lt_nat_abs_of_nonneg_of_lt (norm_nonneg _) (norm_mod_lt x hy)
 end
 

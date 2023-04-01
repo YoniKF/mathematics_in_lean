@@ -21,8 +21,8 @@ example (n : ℕ) : fac (n + 1) = (n + 1) * fac n := by simp [fac]
 theorem fac_pos (n : ℕ) : 0 < fac n :=
 begin
   induction n with n ih,
-  { rw fac, exact zero_lt_one },
-  rw fac,
+  all_goals { rw fac },
+  { exact zero_lt_one },
   exact mul_pos n.succ_pos ih,
 end
 
@@ -41,7 +41,13 @@ theorem pow_two_le_fac (n : ℕ) : 2^(n-1) ≤ fac n :=
 begin
   cases n with n,
   { simp [fac] },
-  sorry
+  induction n with n h,
+  all_goals { simp [fac] },
+  simp [fac] at h,
+  rw pow_succ,
+  apply nat.mul_le_mul _ h,
+  rw nat.succ_eq_add_one,
+  linarith
 end
 
 section
@@ -93,7 +99,15 @@ begin
 end
 
 theorem sum_sqr (n : ℕ) : ∑ i in range (n + 1), i^2 = n * (n + 1) * (2 *n + 1) / 6 :=
-sorry
+begin
+  symmetry,
+  apply nat.div_eq_of_eq_mul_right (by norm_num : 0 < 6),
+  induction n with n h, { simp },
+  rw [finset.sum_range_succ, mul_add 6],
+  rw ←h,
+  rw nat.succ_eq_add_one,
+  ring
+end
 
 end
 

@@ -6,7 +6,7 @@ structure group₁ (α : Type*) :=
 (inv: α → α)
 (mul_assoc : ∀ x y z : α, mul (mul x y) z = mul x (mul y z))
 (mul_one: ∀ x : α, mul x one = x)
-(one_mul: ∀ x : α, mul x one = x)
+(one_mul: ∀ x : α, mul one x = x)
 (mul_left_inv : ∀ x : α, mul (inv x) x = one)
 
 structure Group₁ :=
@@ -48,7 +48,12 @@ def perm_group {α : Type*} : group₁ (equiv.perm α) :=
 
 structure add_group₁ (α : Type*) :=
 (add : α → α → α)
--- fill in the rest
+(zero: α)
+(neg: α → α)
+(add_assoc : ∀ x y z : α, add (add x y) z = add x (add y z))
+(add_zero: ∀ x : α, add x zero = x)
+(zero_add: ∀ x : α, add zero x = x)
+(add_left_neg : ∀ x : α, add (neg x) x = zero)
 
 @[ext] structure point := (x : ℝ) (y : ℝ) (z : ℝ)
 
@@ -56,11 +61,18 @@ namespace point
 
 def add (a b : point) : point := ⟨a.x + b.x, a.y + b.y, a.z + b.z⟩
 
-def neg (a b : point) : point := sorry
+def neg (a : point) : point := ⟨-a.x, -a.y, -a.z⟩
 
-def zero : point := sorry
+def zero : point := ⟨0, 0, 0⟩
 
-def add_group_point : add_group point := sorry
+def add_group_point : add_group₁ point :=
+{ add          := add,
+  zero         := zero,
+  neg          := neg,
+  add_assoc    := by { intros, rw add, ext; dsimp; apply add_assoc },
+  add_zero     := by { intro, rw [add, zero], ext; dsimp; apply add_zero },
+  zero_add     := by { intro, rw [add, zero], ext; dsimp; apply zero_add },
+  add_left_neg := by { intro, rw [add, zero, neg], ext; dsimp; apply add_left_neg } }
 
 end point
 
@@ -78,7 +90,7 @@ by { rw [mul_assoc, mul_right_inv, mul_one] }
 
 example : f * g * (g⁻¹) = f := mul_inv_cancel_right f g
 
-example {α : Type*} (f g : equiv.perm α) : g.symm.trans (g.trans f) = f :=
+example : g.symm.trans (g.trans f) = f :=
 mul_inv_cancel_right f g
 
 end
@@ -150,5 +162,26 @@ end
 
 class add_group₂ (α : Type*) :=
 (add : α → α → α)
--- fill in the rest
+(zero: α)
+(neg: α → α)
+(add_assoc : ∀ x y z : α, add (add x y) z = add x (add y z))
+(add_zero: ∀ x : α, add x zero = x)
+(zero_add: ∀ x : α, add zero x = x)
+(add_left_neg : ∀ x : α, add (neg x) x = zero)
 
+instance has_add_add_group₂ {α : Type*} [add_group₂ α] : has_add α := ⟨add_group₂.add⟩
+
+instance has_zero_add_group₂ {α : Type*} [add_group₂ α] : has_zero α := ⟨add_group₂.zero⟩
+
+instance has_neg_add_group₂ {α : Type*} [add_group₂ α] : has_neg α := ⟨add_group₂.neg⟩
+
+instance : add_group₂ point :=
+{ add          := point.add,
+  zero         := point.zero,
+  neg          := point.neg,
+  add_assoc    := by { intros, rw point.add, ext; dsimp; apply add_assoc },
+  add_zero     := by { intro, rw [point.add, point.zero], ext; dsimp; apply add_zero },
+  zero_add     := by { intro, rw [point.add, point.zero], ext; dsimp; apply zero_add },
+  add_left_neg := by { intro, rw [point.add, point.zero, point.neg], ext; dsimp; apply add_left_neg } }
+
+#check λ (a b : point), a + -b + 0

@@ -5,15 +5,25 @@ open_locale topological_space filter
 
 def principal {α : Type*} (s : set α) : filter α :=
 { sets := {t | s ⊆ t},
-  univ_sets := sorry,
-  sets_of_superset := sorry,
-  inter_sets := sorry}
+  univ_sets := subset_univ s,
+  sets_of_superset := λ _ _, subset.trans,
+  inter_sets := λ _ _, subset_inter }
 
 example : filter ℕ :=
 { sets := {s | ∃ a, ∀ b, a ≤ b → b ∈ s},
-  univ_sets := sorry,
-  sets_of_superset := sorry,
-  inter_sets := sorry }
+  univ_sets := ⟨0, λ _ _, mem_univ _⟩,
+  sets_of_superset := by { rintros _ _ ⟨a, h⟩ hsub,
+                           use a,
+                           intros,
+                           apply hsub,
+                           apply h,
+                           assumption },
+  inter_sets := by { rintros _ _ ⟨a, h⟩ ⟨a', h'⟩,
+                     use max a a',
+                     intros,
+                     split,
+                     { apply h, transitivity max a a', apply le_max_left, assumption },
+                     apply h', transitivity max a a', apply le_max_right, assumption } }
 
 def tendsto₁ {X Y : Type*} (f : X → Y) (F : filter X) (G : filter Y) :=
 ∀ V ∈ G, f ⁻¹' V ∈ F
@@ -21,7 +31,7 @@ def tendsto₁ {X Y : Type*} (f : X → Y) (F : filter X) (G : filter Y) :=
 def tendsto₂ {X Y : Type*} (f : X → Y) (F : filter X) (G : filter Y) :=
 map f F ≤ G
 
-example {X Y : Type*} (f : X → Y) (F : filter X) (G : filter Y) :
+lemma aux {X Y : Type*} (f : X → Y) (F : filter X) (G : filter Y) :
   tendsto₂ f F G ↔ tendsto₁ f F G := iff.rfl
 
 #check (@filter.map_mono : ∀ {α β} {m : α → β}, monotone (map m))
@@ -30,7 +40,24 @@ example {X Y : Type*} (f : X → Y) (F : filter X) (G : filter Y) :
 
 example {X Y Z : Type*} {F : filter X} {G : filter Y} {H : filter Z} {f : X → Y} {g : Y → Z}
   (hf : tendsto₁ f F G) (hg : tendsto₁ g G H) : tendsto₁ (g ∘ f) F H :=
-sorry
+begin
+  rw tendsto₁,
+  intros,
+  rw preimage_comp,
+  apply hf,
+  apply hg,
+  assumption
+end
+
+example {X Y Z : Type*} {F : filter X} {G : filter Y} {H : filter Z} {f : X → Y} {g : Y → Z}
+  (hf : tendsto₁ f F G) (hg : tendsto₁ g G H) : tendsto₁ (g ∘ f) F H :=
+begin
+  rw [←aux, tendsto₂] at *,
+  rw ←map_map,
+  transitivity' map g G,
+  apply map_mono hf,
+  assumption
+end
 
 variables (f : ℝ → ℝ) (x₀ y₀ : ℝ)
 
@@ -48,9 +75,17 @@ example : 𝓝 (x₀, y₀) = 𝓝 x₀ ×ᶠ 𝓝 y₀ := nhds_prod_eq
 #check le_inf_iff
 
 example (f : ℕ → ℝ × ℝ) (x₀ y₀ : ℝ) :
-  tendsto f at_top (𝓝 (x₀, y₀)) ↔
+   (𝓝 (x₀, y₀)) ↔
     tendsto (prod.fst ∘ f) at_top (𝓝 x₀) ∧ tendsto (prod.snd ∘ f) at_top (𝓝 y₀) :=
-sorry
+begin
+  repeat {rw tendsto},
+  rw [nhds_prod_eq, filter.prod],
+  nth_rewrite_rhs 0 ←map_map,
+  nth_rewrite_rhs 2 ←map_map,
+  nth_rewrite_rhs 0 map_le_iff_le_comap,
+  nth_rewrite_rhs 1 map_le_iff_le_comap,
+  apply le_inf_iff
+end
 
 example (x₀ : ℝ) : has_basis (𝓝 x₀) (λ ε : ℝ, 0 < ε) (λ ε, Ioo (x₀ - ε) (x₀ + ε)) :=
 nhds_basis_Ioo_pos x₀
@@ -102,5 +137,9 @@ end
 
 example (u : ℕ → ℝ) (M : set ℝ) (x : ℝ)
   (hux : tendsto u at_top (𝓝 x)) (huM : ∀ᶠ n in at_top, u n ∈ M) : x ∈ closure M :=
-sorry
-
+begin
+  rw [mem_closure_iff_cluster_pt, cluster_pt],
+  apply ne_bot_of_le ∘ le_inf hux,
+  rw le_principal_iff,
+  exact huM
+end

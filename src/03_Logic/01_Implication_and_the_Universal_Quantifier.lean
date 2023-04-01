@@ -37,15 +37,23 @@ begin
   sorry
 end
 
+#check abs_mul
+#check @mul_le_mul ℝ _
+#check @abs_nonneg ℝ _ _ _
+#check mul_lt_mul_right
+#check @mul_lt_mul_right ℝ _
+#check @one_mul ℝ _
+#check le_of_lt
+
 lemma my_lemma4 : ∀ {x y ε : ℝ},
   0 < ε → ε ≤ 1 → abs x < ε → abs y < ε → abs (x * y) < ε :=
 begin
   intros x y ε epos ele1 xlt ylt,
   calc
-    abs (x * y) = abs x * abs y : sorry
-    ... ≤ abs x * ε             : sorry
-    ... < 1 * ε                 : sorry
-    ... = ε                     : sorry
+    abs (x * y) = abs x * abs y : abs_mul _ _
+    ...         ≤ abs x * ε     : mul_le_mul (le_refl (abs x)) (le_of_lt ylt) (abs_nonneg y) (abs_nonneg x)
+    ...         < 1 * ε         : (mul_lt_mul_right (epos)).mpr (lt_of_lt_of_le xlt ele1)
+    ...         = ε             : one_mul _
 end
 
 def fn_ub (f : ℝ → ℝ) (a : ℝ) : Prop := ∀ x, f x ≤ a
@@ -66,16 +74,34 @@ end
 
 example (hfa : fn_lb f a) (hgb : fn_lb g b) :
   fn_lb (λ x, f x + g x) (a + b) :=
-sorry
+begin
+  intro x,
+  dsimp,
+  apply add_le_add,
+  apply hfa,
+  apply hgb
+end
 
 example (nnf : fn_lb f 0) (nng : fn_lb g 0) :
   fn_lb (λ x, f x * g x) 0 :=
-sorry
+begin
+  intro x, dsimp,
+  apply mul_nonneg,
+  apply nnf,
+  apply nng
+end
 
-example (hfa : fn_ub f a) (hfb : fn_ub g b)
+example (hfa : fn_ub f a) (hgb : fn_ub g b)
     (nng : fn_lb g 0) (nna : 0 ≤ a) :
   fn_ub (λ x, f x * g x) (a * b) :=
-sorry
+begin
+  intro x, dsimp,
+  apply mul_le_mul,
+  apply hfa,
+  apply hgb,
+  apply nng,
+  exact nna
+end
 
 end
 
@@ -102,6 +128,7 @@ example (mf : monotone f) (mg : monotone g) :
   monotone (λ x, f x + g x) :=
 begin
   intros a b aleb,
+  dsimp,
   apply add_le_add,
   apply mf aleb,
   apply mg aleb
@@ -113,11 +140,27 @@ example (mf : monotone f) (mg : monotone g) :
 
 example {c : ℝ} (mf : monotone f) (nnc : 0 ≤ c) :
   monotone (λ x, c * f x) :=
-sorry
+begin
+  intros a b aleb, dsimp,
+  apply mul_le_mul_of_nonneg_left,
+  apply mf aleb,
+  exact nnc
+end
+
+example {c : ℝ} (mf : monotone f) (nnc : 0 ≤ c) : monotone (λ x, c * f x) :=
+  λ a b aleb, mul_le_mul_of_nonneg_left (mf aleb) nnc
 
 example (mf : monotone f) (mg : monotone g) :
   monotone (λ x, f (g x)) :=
-sorry
+begin
+  intros a b aleb, dsimp,
+  apply mf,
+  apply mg,
+  exact aleb,
+end
+
+example (mf : monotone f) (mg : monotone g) : monotone (λ x, f (g x)) :=
+  λ a b aleb, mf (mg aleb)
 
 def fn_even (f : ℝ → ℝ) : Prop := ∀ x, f x = f (-x)
 def fn_odd (f : ℝ → ℝ) : Prop := ∀ x, f x = - f (-x)
@@ -131,13 +174,28 @@ begin
 end
 
 example (of : fn_odd f) (og : fn_odd g) : fn_even (λ x, f x * g x) :=
-sorry
+begin
+  intro x, dsimp,
+  rw [of, og],
+  rw mul_neg,
+  rw [mul_comm, mul_neg],
+  rw neg_neg,
+  rw mul_comm
+end
 
 example (ef : fn_even f) (og : fn_odd g) : fn_odd (λ x, f x * g x) :=
-sorry
+begin
+  intro x, dsimp,
+  rw [ef, og],
+  rw mul_neg
+end
 
 example (ef : fn_even f) (og : fn_odd g) : fn_even (λ x, f (g x)) :=
-sorry
+begin
+  intro x, dsimp,
+  rw [ef, og],
+  rw neg_neg
+end
 
 end
 
@@ -150,7 +208,15 @@ by { intros x xs, exact xs }
 theorem subset.refl : s ⊆ s := λ x xs, xs
 
 theorem subset.trans : r ⊆ s → s ⊆ t → r ⊆ t :=
-sorry
+begin
+  intros r_sub_s s_sub_t,
+  intros x x_in_r,
+  apply s_sub_t,
+  apply r_sub_s,
+  exact x_in_r
+end
+
+example : r ⊆ s → s ⊆ t → r ⊆ t := λ r_sub_s s_sub_t x x_in_r, s_sub_t (r_sub_s x_in_r)
 
 end
 
@@ -162,7 +228,7 @@ variables (s : set α) (a b : α)
 def set_ub (s : set α) (a : α) := ∀ x, x ∈ s → x ≤ a
 
 example (h : set_ub s a) (h' : a ≤ b) : set_ub s b :=
-sorry
+  λ x x_in_s, le_trans (h x x_in_s) h'
 
 end
 
@@ -176,13 +242,21 @@ begin
 end
 
 example {c : ℝ} (h : c ≠ 0) : injective (λ x, c * x) :=
-sorry
+begin
+  intros x y, dsimp, intro h',
+  apply (mul_right_inj' h).mp h'
+end
 
 variables {α : Type*} {β : Type*} {γ : Type*}
 variables {g : β → γ} {f : α → β}
 
 example (injg : injective g) (injf : injective f) :
   injective (λ x, g (f x)) :=
-sorry
+begin
+  intros x y, dsimp, intro h,
+  apply injf,
+  apply injg,
+  exact h
+end
 
 end

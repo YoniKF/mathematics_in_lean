@@ -13,12 +13,12 @@ example : is_open (univ : set X) := is_open_univ
 
 example : is_open (∅ : set X) := is_open_empty
 
-example {ι : Type*} {s : ι → set X} (hs : ∀ i, is_open $ s i) : 
-  is_open (⋃ i, s i) := 
+example {ι : Type*} {s : ι → set X} (hs : ∀ i, is_open $ s i) :
+  is_open (⋃ i, s i) :=
 is_open_Union hs
 
-example {ι : Type*} [fintype ι] {s : ι → set X} (hs : ∀ i, is_open $ s i) : 
-  is_open (⋂ i, s i) := 
+example {ι : Type*} [fintype ι] {s : ι → set X} (hs : ∀ i, is_open $ s i) :
+  is_open (⋂ i, s i) :=
 is_open_Inter hs
 
 
@@ -47,7 +47,7 @@ mem_nhds_iff
 
 example (x : X) : pure x ≤ 𝓝 x := pure_le_nhds x
 
-example (x : X) (P : X → Prop) (h : ∀ᶠ y in 𝓝 x, P y) : P x := 
+example (x : X) (P : X → Prop) (h : ∀ᶠ y in 𝓝 x, P y) : P x :=
 pure_le_nhds x h
 
 
@@ -61,10 +61,17 @@ eventually_eventually_nhds.mpr h
 #check topological_space.nhds_mk_of_nhds.
 
 
-example {α : Type*} (n : α → filter α) (H₀ : ∀ a, pure a ≤ n a) 
+example {α : Type*} (n : α → filter α) (H₀ : ∀ a, pure a ≤ n a)
   (H : ∀ a : α, ∀ p : α → Prop, (∀ᶠ x in n a, p x) → (∀ᶠ y in n a, ∀ᶠ x in n y, p x)) :
   ∀ a, ∀ s ∈ n a, ∃ t ∈ n a, t ⊆ s ∧ ∀ a' ∈ t, s ∈ n a' :=
-sorry
+begin
+  intros a s sna,
+  use [{x | s ∈ n x}, H a s sna],
+  split,
+  { intros x snbhdx, dsimp at snbhdx,
+    exact H₀ x snbhdx },
+  tauto,
+end
 
 
 end
@@ -101,7 +108,7 @@ continuous_iff_coinduced_le
 
 
 
-example {Z : Type*} (f : X → Y) 
+example {Z : Type*} (f : X → Y)
   (T_X : topological_space X) (T_Z : topological_space Z) (g : Y → Z) :
   @continuous Y Z (topological_space.coinduced f T_X) T_Z g ↔ @continuous X Z T_X T_Z (g ∘ f) :=
 by rw [continuous_iff_coinduced_le, coinduced_compose, continuous_iff_coinduced_le]
@@ -115,7 +122,7 @@ rfl
 
 
 
-example [topological_space X] [t2_space X] {u : ℕ → X} {a b : X} 
+example [topological_space X] [t2_space X] {u : ℕ → X} {a b : X}
   (ha : tendsto u at_top (𝓝 a)) (hb : tendsto u at_top (𝓝 b)) : a = b :=
 tendsto_nhds_unique ha hb
 
@@ -131,12 +138,17 @@ nhds_basis_opens' x
 lemma aux {X Y A : Type*} [topological_space X] {c : A → X} {f : A → Y} {x : X} {F : filter Y}
   (h : tendsto f (comap c (𝓝 x)) F) {V' : set Y} (V'_in : V' ∈ F) :
   ∃ V ∈ 𝓝 x, is_open V ∧ c ⁻¹' V ⊆ f ⁻¹' V' :=
-sorry
+begin
+  have nhds_basis_x_opens := nhds_basis_opens' x,
+  have nhds_basis_x_opens_A := nhds_basis_x_opens.comap c,
+  have := nhds_basis_x_opens_A.tendsto_left_iff.mp h V' V'_in,
+  simpa [and_assoc] using this
+end
 
 
 
 
-example [topological_space X] [topological_space Y] [regular_space Y] 
+example [topological_space X] [topological_space Y] [regular_space Y]
   {A : set X} (hA : ∀ x, x ∈ closure A)
   {f : A → Y} (f_cont : continuous f)
   (hf : ∀ x : X, ∃ c : Y, tendsto f (comap coe $ 𝓝 x) $ 𝓝 c) :
@@ -156,12 +168,12 @@ variables [topological_space X]
 example {F : filter X} {x : X} : cluster_pt x F ↔ ne_bot (𝓝 x ⊓ F) :=
 iff.rfl
 
-example {s : set X} : 
+example {s : set X} :
   is_compact s ↔ ∀ (F : filter X) [ne_bot F], F ≤ 𝓟 s → ∃ a ∈ s, cluster_pt a F :=
 iff.rfl
 
 
-example [topological_space.first_countable_topology X] 
+example [topological_space.first_countable_topology X]
   {s : set X} {u : ℕ → X} (hs : is_compact s) (hu : ∀ n, u n ∈ s) :
   ∃ (a ∈ s) (φ : ℕ → ℕ), strict_mono φ ∧ tendsto (u ∘ φ) at_top (𝓝 a) :=
 hs.tendsto_subseq hu
@@ -176,7 +188,7 @@ example {x : X} {F : filter X} {G : filter Y} (H : cluster_pt x F)
 cluster_pt.map H hfx hf
 
 
-example [topological_space Y] {f : X  → Y} (hf : continuous f) 
+example [topological_space Y] {f : X  → Y} (hf : continuous f)
   {s : set X} (hs : is_compact s) : is_compact (f '' s) :=
 begin
   intros F F_ne F_le,

@@ -33,16 +33,36 @@ begin
 end
 
 example : f '' s ⊆ v ↔ s ⊆ f ⁻¹' v :=
-sorry
+begin
+  split,
+  { intro h,
+    intros x xs,
+    apply h,
+    use [x, xs] },
+  { intro h,
+    rintros y ⟨x, xs, rfl⟩,
+    apply h,
+    exact xs }
+end
 
 example (h : injective f) : f ⁻¹' (f '' s) ⊆ s :=
-sorry
+begin
+  rintros x ⟨y, ys, fyeqfx⟩,
+  rwa ← h fyeqfx
+end
 
 example : f '' (f⁻¹' u) ⊆ u :=
-sorry
+begin
+  rintros y ⟨x, h, rfl⟩,
+  exact h,
+end
 
 example (h : surjective f) : u ⊆ f '' (f⁻¹' u) :=
-sorry
+begin
+  rintros y memu,
+  rcases h y with ⟨x, rfl⟩,
+  use [x, memu]
+end
 
 example (h : s ⊆ t) : f '' s ⊆ f '' t :=
 sorry
@@ -75,7 +95,13 @@ example : s ∩ f ⁻¹' u ⊆ f ⁻¹' (f '' s ∩ u) :=
 sorry
 
 example : s ∪ f ⁻¹' u ⊆ f ⁻¹' (f '' s ∪ u) :=
-sorry
+begin
+  rintros x (xs | fxu),
+  { left,
+    use [x, xs] },
+  { right,
+    exact fxu }
+end
 
 variables {I : Type*} (A : I → set α) (B : I → set β)
 
@@ -144,16 +170,41 @@ begin
 end
 
 example : inj_on sqrt { x | x ≥ 0 } :=
-sorry
+begin
+  intros x xnn y ynn e,
+  calc
+    x   = (sqrt x)^2 : by rw sq_sqrt xnn
+    ... = (sqrt y)^2 : by rw e
+    ... = y          : by rw sq_sqrt ynn
+end
 
 example : inj_on (λ x, x^2) { x : ℝ | x ≥ 0 } :=
-sorry
+begin
+    intros x xnn y ynn e,
+    dsimp at e,
+  calc
+    x   = sqrt (x^2) : by rw sqrt_sq xnn
+    ... = sqrt (y^2) : by rw e
+    ... = y          : by rw sqrt_sq ynn
+end
 
 example : sqrt '' { x | x ≥ 0 } = {y | y ≥ 0} :=
-sorry
+begin
+  ext y, split,
+  { rintro ⟨x, xnn, rfl⟩,
+    apply sqrt_nonneg },
+  { intro ynn,
+    use [y^2, sq_nonneg y, sqrt_sq ynn] }
+end
 
 example : range (λ x, x^2) = {y : ℝ  | y ≥ 0} :=
-sorry
+begin
+  ext y, split,
+  { rintro ⟨x, rfl⟩,
+    exact sq_nonneg x },
+  { intro ynn,
+    use [sqrt y, sq_sqrt ynn] }
+end
 
 end
 
@@ -185,10 +236,28 @@ variable  f : α → β
 open function
 
 example : injective f ↔ left_inverse (inverse f) f  :=
-sorry
+begin
+  split,
+  { intros finj x,
+    apply finj,
+    apply inverse_spec,
+    use x },
+  { intros linv x y feq,
+    rw ←linv x,
+    rw ←linv y,
+    rw feq }
+end
 
 example : surjective f ↔ right_inverse (inverse f) f :=
-sorry
+begin
+  split,
+  { intros fsur y,
+    apply inverse_spec,
+    apply fsur },
+  { intros rinv y,
+    use inverse f y,
+    apply rinv }
+end
 
 end
 
@@ -207,9 +276,9 @@ begin
       { by rwa h at h' },
     contradiction },
   have h₂ : j ∈ S,
-    sorry,
+    { exact h₁ },
   have h₃ : j ∉ S,
-    sorry,
+    { rw ← h, exact h₁ },
   contradiction
 end
 

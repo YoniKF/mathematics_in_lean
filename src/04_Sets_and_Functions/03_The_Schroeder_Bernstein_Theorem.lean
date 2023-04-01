@@ -29,10 +29,12 @@ begin
     rw [sb_set, mem_Union],
     use [0],
     rw [sb_aux, mem_diff],
-    sorry },
+    use [mem_univ x] },
   have : ∃ y, g y = x,
-  { sorry },
-  sorry
+  { rcases this with ⟨y, _, rfl⟩,
+    use y },
+  apply inv_fun_eq,
+  assumption
 end
 
 theorem sb_injective (hf: injective f) (hg : injective g) :
@@ -52,15 +54,23 @@ begin
       rw [if_pos xA, if_neg x₂nA] at hxeq,
       rw [A_def, sb_set, mem_Union] at xA,
       have x₂eq : x₂ = g (f x₁),
-      { sorry },
+      { rw hxeq,
+        symmetry,
+        apply sb_right_inv,
+        exact x₂nA },
       rcases xA with ⟨n, hn⟩,
       rw [A_def, sb_set, mem_Union],
       use n + 1,
       simp [sb_aux],
       exact ⟨x₁, hn, x₂eq.symm⟩ },
-    sorry },
+    apply hf,
+    rw [if_pos xA, if_pos x₂A] at hxeq,
+    exact hxeq },
   push_neg at xA,
-  sorry
+  rw [if_neg xA.1, if_neg xA.2] at hxeq,
+  rw ← sb_right_inv _ _ xA.1,
+  rw ← sb_right_inv _ _ xA.2,
+  rw hxeq
 end
 
 theorem sb_surjective (hf: injective f) (hg : injective g) :
@@ -83,7 +93,11 @@ begin
       exact ⟨n, xmem⟩ },
     simp only [h_def, sb_fun, if_pos this],
     exact hg hx },
-  sorry
+    rw A_def at gyA,
+    use g y,
+    simp only [h_def, sb_fun, if_neg gyA],
+    apply hg,
+    rw sb_right_inv _ _ gyA
 end
 
 end
