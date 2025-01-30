@@ -45,11 +45,10 @@ example : ∀ m n : Nat, Even n → Even (m * n) := by
   -- Substitute for `n`,
   rw [hk]
   -- and now it's obvious.
-  ring
+  rw [mul_add]
 
 example : ∀ m n : Nat, Even n → Even (m * n) := by
   rintro m n ⟨k, hk⟩; use m * k; rw [hk]; ring
 
 example : ∀ m n : Nat, Even n → Even (m * n) := by
   intros; simp [*, parity_simps]
-
